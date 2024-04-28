@@ -26,14 +26,15 @@ const val PLAYER_TABLE_NAME = "players"
 
 const val PSEUDO_ATTRIBUTE = "pseudo"
 
-fun configAppModule(dbEndPointUrl: String) = module {
+fun configAppModule(
+    dbEndPointUrl: String, accessKey:String, secretAccess:String, token:String) = module {
     single(createdAtStart = true) {
         val dynamoDbClient = DynamoDbClient {
             region = "us-west-3"
             credentialsProvider = StaticCredentialsProvider.invoke {
-                accessKeyId = "AKIAIOSFODNN7EXAMPLE"
-                secretAccessKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-                sessionToken = "FAKE_SESSION_TOKEN"
+                accessKeyId = accessKey
+                secretAccessKey = secretAccess
+                sessionToken = token
             }
             endpointUrl = parse(dbEndPointUrl)
         }
@@ -48,13 +49,18 @@ fun configAppModule(dbEndPointUrl: String) = module {
 
 
 private const val DEFAULT_DB_ENDPOINT = "http://localhost:8000"
+private const val AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+private const val AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+private const val AWS_SESSION_TOKEN = "FAKE_SESSION_TOKEN"
 
 fun Application.configureContext(dbEndPointUrl: String ?= null) {
-    environment.config.host
     val realUrl = dbEndPointUrl?:environment.config.propertyOrNull("database.endpoint")?.getString() ?: DEFAULT_DB_ENDPOINT
+    val accessKey = environment.config.propertyOrNull("aws.accessKeyId")?.getString()?: AWS_ACCESS_KEY_ID
+    val secretAccess = environment.config.propertyOrNull("aws.secretAccessKey")?.getString()?: AWS_SECRET_ACCESS_KEY
+    val token = environment.config.propertyOrNull("aws.sessionToken")?.getString()?: AWS_SESSION_TOKEN
     install(KoinIsolated) {
         slf4jLogger()
-        modules(configAppModule(realUrl))
+        modules(configAppModule(realUrl,accessKey,secretAccess,token))
 
     }
     install(SwaggerUI) {
